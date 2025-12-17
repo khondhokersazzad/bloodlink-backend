@@ -43,7 +43,7 @@ const verifyFBToken = async (req, res, next) => {
 //----Mongo credentials---
 
 const uri =
-  "mongodb+srv://Sazzad:opSBhbtpfPfavN2i@cluster0.eb48hh2.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eb48hh2.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -79,6 +79,12 @@ async function run() {
 
       res.send(result);
     });
+
+
+    app.get('/users', verifyFBToken , async (req,res)=>{
+      const result = await userCollections.find().toArray();
+      res.send(result);
+    })
     //Request data 
     app.post("/request", verifyFBToken ,async(req,res) =>{
       const requestInfo = req.body;
@@ -95,6 +101,25 @@ async function run() {
       res.send(result);
       console.log(result);
     });
+
+
+//Patch for one changes for update one single data field
+//here we got status & email by query using patch method 
+//$set : is the mongoDb cmd for updating file
+    app.patch("/update/user/status",verifyFBToken, async(req,res)=>{
+      const {email,status} = req.query;
+
+      const query = {email: email};
+      const updateStatus= {
+        $set : {
+          status : status,
+        }
+      }
+      const result = await userCollections.updateOne(query , updateStatus);
+      //first checked email and mattches and then updated the data 
+      res.send(result);
+
+    })
   } finally {
     // Ensures that the client will close when you finish/error
     //await client.close();

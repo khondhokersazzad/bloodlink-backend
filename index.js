@@ -69,7 +69,7 @@ async function run() {
     app.post("/users", async (req, res) => {
       const userInfo = req.body;
       userInfo.role = "donor";
-      userInfo.status = "pending"
+      userInfo.status = "active"
       userInfo.createdAt = new Date(new Date().getTime() + 6 * 60 * 60 * 1000)
         .toISOString()
         .slice(0, 19)
@@ -85,12 +85,57 @@ async function run() {
       const result = await userCollections.find().toArray();
       res.send(result);
     })
+
+    //Individual user details
+    app.get('/users/data',verifyFBToken, async(req,res)=>{
+      const email = req.decoded_email;
+      const query = {email : email}
+      const result = await userCollections.findOne(query);
+      res.send(result);
+    })
+    //Update profile data
+    app.put('/users/data',verifyFBToken, async(req,res)=>{
+      const email = req.decoded_email;
+      const data = req.body;
+
+      const query = {email:email};
+      const updateData = {
+        $set: data,
+      };
+      const result = await userCollections.updateOne(query, updateData)
+
+      res.send(result);
+      
+    })
+
     //Request data 
     app.post("/request", verifyFBToken ,async(req,res) =>{
       const requestInfo = req.body;
       requestInfo.donation_status = "pending"
       const result = await requestCollections.insertOne(requestInfo);
       res.send(result);
+    })
+
+    //Get data for my request
+    app.get("/my-request",verifyFBToken, async(req,res)=>{
+      const email = req.decoded_email;
+      const query = {req_email : email}
+
+      const size = Number(req.query.size);
+      const page = Number(req.query.page);
+      
+
+      const result = await requestCollections
+      .find(query)
+      .limit(size)
+      .skip(size * page)
+      .toArray();
+
+      const totalRequest = await requestCollections.countDocuments(query); 
+
+
+
+      res.send({request: result, totalRequest });
 
     })
 

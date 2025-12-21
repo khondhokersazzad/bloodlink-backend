@@ -101,7 +101,7 @@ async function run() {
       const result = await userCollections.find().toArray();
       res.send(result);
     });
-
+    //Logged user data
     app.get("/users/data", verifyFBToken, async (req, res) => {
       const email = req.decoded_email;
       const result = await userCollections.findOne({ email });
@@ -114,7 +114,7 @@ async function run() {
       const result = await userCollections.updateOne({ email }, { $set: data });
       res.send(result);
     });
-
+    //New Request
     app.post("/request", verifyFBToken, async (req, res) => {
       const requestInfo = req.body;
       requestInfo.donation_status = "pending";
@@ -133,7 +133,7 @@ async function run() {
 
     app.get("/search-request", async (req, res) => {
       const { bloodgrp, district, upazilla } = req.query;
-      const query = {};
+      const query = { donation_status: "pending" };
       if (district && district !== "Select Your District") {
         query.rec_district = { $regex: `^${district}$`, $options: "i" };
       }

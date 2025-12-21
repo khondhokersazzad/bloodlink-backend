@@ -131,6 +131,49 @@ async function run() {
       res.send(result);
     })
 
+    //Get Request details 
+    app.get('/update-request-details/:id', verifyFBToken, async(req,res)=>{
+      const {id} = req.params;
+
+      const query = {_id: new ObjectId(id)}
+      const result = await requestCollections.findOne(query);
+      res.send(result);
+    })
+
+    //Update Request details
+
+    app.put("/update-request-details/:id", async (req, res) => {
+      const data = req.body;
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
+
+      const updateServices = {
+        $set: data,
+      };
+      const result = await requestCollections.updateOne(query, updateServices);
+
+      res.send(result);
+    });
+
+    //Request update status only
+    app.patch("/request-details/:id", verifyFBToken, async (req, res) => {
+      const {id} = req.params;
+      const { donation_status } = req.query;
+      const result = await requestCollections.updateOne(
+        {_id: new ObjectId(id) },
+        { $set: { donation_status } }
+      );
+      res.send(result);
+    });
+
+    //Request Delete
+    app.delete("/request/delete/:id",verifyFBToken,verifyAdmin, async(req,res)=>{
+      const {id} = req.params;
+      const query = {_id :new ObjectId(id)};
+      const result = await requestCollections.deleteOne(query);
+      res.send(result);
+    })
+
     app.get("/search-request", async (req, res) => {
       const { bloodgrp, district, upazilla } = req.query;
       const query = { donation_status: "pending" };
@@ -183,8 +226,8 @@ async function run() {
     });
 
     app.patch("/update/user/status", verifyFBToken, async (req, res) => {
-      const { email, status } = req.query;
-      const result = await userCollections.updateOne(
+      const { email,status } = req.query;
+      const result = await requestCollections.updateOne(
         { email },
         { $set: { status } }
       );

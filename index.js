@@ -62,6 +62,25 @@ const verifyAdmin = async (req, res, next) => {
   }
 };
 
+const verifyAdminOrVolunteer = async (req, res, next) => {
+  try {
+    const email = req.decoded_email; // ✅ match existing logic
+
+    const user = await userCollections.findOne({ email });
+
+    if (!user || !["admin", "volunteer"].includes(user.role)) {
+      return res.status(403).send({ message: "forbidden access" });
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+
+
+
 // ---- Mongo credentials ---
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eb48hh2.mongodb.net/?appName=Cluster0`;
 
@@ -96,8 +115,8 @@ async function run() {
       const result = await userCollections.insertOne(userInfo);
       res.send(result);
     });
-
-    app.get("/users", verifyFBToken, async (req, res) => {
+    //All
+    app.get("/users",  async (req, res) => {
       const result = await userCollections.find().toArray();
       res.send(result);
     });
@@ -206,7 +225,13 @@ async function run() {
       res.send({ request: result, totalRequest });
     });
 
-    app.get("/all-request", verifyFBToken, verifyAdmin, async (req, res) => {
+    app.get("/all-blood-request", async (req,res)=>{
+      const query = { donation_status: "pending" };
+      const result = await requestCollections.find(query).toArray();
+      res.send(result);
+    })
+
+    app.get("/all-request",  async (req, res) => {
       const size = Number(req.query.size) || 10;
       const page = Number(req.query.page) || 0;
 
@@ -219,7 +244,7 @@ async function run() {
       res.send({ request: result, totalRequest });
     });
 
-    app.get("/users/role/:email", async (req, res) => {
+    app.get("/users/role/:email",   async (req, res) => {
       const { email } = req.params;
       const result = await userCollections.findOne({ email });
       res.send(result);
@@ -236,8 +261,29 @@ async function run() {
   } catch (error) {
     console.error("Database connection error:", error);
   }
+
+  
 }
+app.patch("/update/user/role", verifyFBToken, async (req, res) => {
+      const {email,role} = req.query;
+      
+      const result = await userCollections.updateOne(
+        {email: email },
+        { $set: { role } }
+      );
+      res.send(result);
+    });
+
+
+
+
+
+
+
+
 run().catch(console.dir);
+
+
 
 app.get("/", (req, res) => {
   res.send("Hello Devs!");
